@@ -99,6 +99,7 @@ def find_path():
         current_room = current_path[-1]
         # print(current_room, completed)
 
+        # print("here", current_room)
         if len(current_path) > 1:
             last_room = current_path[-2]
             last_direction = traversalPath[-1]
@@ -119,55 +120,72 @@ def find_path():
             key for (key, value) in path_graph[current_room].items() if value == "?"
         ]
 
+        if len(completed) != len(world.rooms) and "?" not in path_graph[current_room].values() and len(path_graph[current_room].items()) > 1:
+            possible_exits = [key for key in path_graph[current_room].keys()]
+            # print(possible_exits)
+
         if len(possible_exits) > 0:
-            test = True
-            while test:
-                next_step = random.choice(possible_exits)
-                next_room = world.rooms[current_room].getRoomInDirection(next_step).id
-                if next_room in completed:
-                    possible_exits.remove(next_step)
-                else:
-                    test = False
+            # test = True
+            # while test:
+            next_step = random.choice(possible_exits)
+            next_room = world.rooms[current_room].getRoomInDirection(next_step).id
+                # if next_room in completed:
+                #     possible_exits.remove(next_step)
+                # else:
+                #     test = False
 
             traversalPath.append(next_step)
             current_path.append(next_room)
             s.push(current_path)
         else:
             q = Queue()
-            q.enqueue(current_room)
+            q.enqueue([current_room])
 
             while q.size() > 0:
-                back_track = q.dequeue()
-                # print(path_graph[back_track].values())
+                # print("now here")
+                if len(completed) == len(world.rooms):
+                    return len(traversalPath)
+                back_track_path = q.dequeue()
+                current_retrace = back_track_path[-1]
 
-                if "?" not in path_graph[back_track].values():
-                    completed.add(back_track)
-                    if len(completed) == len(world.rooms):
-                        # print("Done")
-                        return len(completed)
-                    back_exits = [key for key in path_graph[back_track].keys()]
-                    if len(back_exits) > 1:
-                        back_exits.remove(reverse[traversalPath[-1]])
-                    back_step = random.choice(back_exits)
-                    # print('Where to go: "', back_exits)
+                if "?" in path_graph[current_retrace].values():
                     # print(traversalPath)
-                    back_room = world.rooms[back_track].getRoomInDirection(back_step).id
-
-                    traversalPath.append(back_step)
-                    q.enqueue(back_room)
+                    # print(back_track_path)
+                    # print(len(completed))
+                    # print(current_retrace)
+                    for i in range(1, len(back_track_path)):
+                        # **** Refine this later ****
+                        traversalPath.append(
+                            [
+                                key
+                                for (key, value) in path_graph[
+                                    back_track_path[i - 1]
+                                ].items()
+                                if value == back_track_path[i]
+                            ][0]
+                        )
+                        # **** --------  ****
+                    # traversalPath = traversalPath + back_track_directions
+                    # print(traversalPath)
+                    s.push([current_retrace])
+                    break
                 else:
-                    current_path = [back_track]
-                    s.push(current_path)
+                    completed.add(current_retrace)
+
+                possible_exits = [key for key in path_graph[current_retrace].keys()]
+
+                for direction in possible_exits:
+                    room_id = (
+                        world.rooms[current_retrace].getRoomInDirection(direction).id
+                    )
+                    copy_path = back_track_path[:]
+                    copy_path.append(room_id)
+                    q.enqueue(copy_path)
 
     return completed
 
 
-test_path = 2001
-while test_path > 2000:
-    find_path()
-    test_path = len(traversalPath)
-    print(test_path)
-    traversalPath = []
+print(find_path())
 # print(traversalPath)
 
 
